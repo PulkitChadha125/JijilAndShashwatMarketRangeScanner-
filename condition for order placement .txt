@@ -1,0 +1,15 @@
+condition for order placement 
+
+buy 
+1) given percentage (20) moves in trade direction 120
+2) quantity will be calculated based on account balance and price = bal/price 
+3) logging will be there in this if the order is rejected or completed we want the status of it 
+4) stoploss in percentage of the price (changeable 2 or 3, or x in percentage)
+5) is in percentage (changeable) =3 % = 123.6
+6) automation in running 
+7) integration with Zerodha 
+
+
+sell will be the opposite of buy 
+strategy will work as a scanner
+start time and stop time needed
