@@ -50,8 +50,8 @@ credentials_dict = get_zerodha_credentials()
 user_id = credentials_dict.get('ZerodhaUserId')  # Login Id
 password = credentials_dict.get('ZerodhaPassword')  # Login password
 fakey = credentials_dict.get('Zerodha2fa')
-
-TradeBufferPercentage = float(credentials_dict.get('TradeBufferPercentage'))
+BuyBufferPercentage = float(credentials_dict.get('BuyBufferPercentage'))
+SellBufferPercentage = float(credentials_dict.get('SellBufferPercentage'))
 StoplossPercentage = float(credentials_dict.get('StoplossPercentage'))
 Target1Percentage =float( credentials_dict.get('Target1Percentage'))
 Target2Percentage =float( credentials_dict.get('Target2Percentage'))
@@ -70,7 +70,7 @@ symbol_dict={}
 priority_dict={}
 formatted_symbols=None
 def my_trade_universe():
-    global Leverage_multiplier, Lot3_percentage,Lot2_percentage, Lot1_percentage,TotalAmountQty, symbol_dict, formatted_symbols,TradeBufferPercentage,StoplossPercentage,Target1Percentage,Target2Percentage,Target3Percentage,TSLPercentage
+    global BuyBufferPercentage ,SellBufferPercentage , Leverage_multiplier, Lot3_percentage,Lot2_percentage, Lot1_percentage,TotalAmountQty, symbol_dict, formatted_symbols,StoplossPercentage,Target1Percentage,Target2Percentage,Target3Percentage,TSLPercentage
     try:
         df = pd.read_csv('MYINSTRUMENTS.csv')
         current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
@@ -79,10 +79,10 @@ def my_trade_universe():
             try:
                 previousclose= Zerodha_Integration.get_prevous_close(symbol)
 
-                buyval=calculate_percentage_values(previousclose,TradeBufferPercentage)
+                buyval=calculate_percentage_values(previousclose,BuyBufferPercentage)
                 buyval=previousclose+buyval
 
-                sellval=calculate_percentage_values(previousclose,TradeBufferPercentage)
+                sellval=calculate_percentage_values(previousclose,SellBufferPercentage)
                 sellval=previousclose-sellval
 
                 symbol_dict[symbol] = {
@@ -126,15 +126,10 @@ def check_orders(symbol_dict):
         try:
             timestamp = datetime.now()
             timestamp = timestamp.strftime("%d/%m/%Y %H:%M:%S")
-            ltp = Zerodha_Integration.get_ltp(symbol)
-            print(f'{timestamp} Checking Orders...')
-            print(f'{timestamp} tradetype: ',data['tradetype'])
-            print(f'{timestamp} ltp: ',ltp)
-            print(f'{timestamp} buyval: ',data['buyval'])
+            ltp = float(Zerodha_Integration.get_ltp(symbol))
 
-
-
-            if data['tradetype'] is None and data['buyval'] > 0 and ltp > data['buyval']:
+            if data['tradetype'] is None and float(data['buyval'] ) > 0 and float(ltp) > float(data['buyval']):
+                ltp = float(Zerodha_Integration.get_ltp(symbol))
                 data['tradetype']="BUY"
                 data["stoplos_bool"]=True
                 data["tp1_bool"]=True
@@ -145,8 +140,15 @@ def check_orders(symbol_dict):
 
 
                 amounttotrade= calculate_percentage_values(brokermargin,TotalAmountQty)
+                print("amounttotrade: ",amounttotrade)
+                print("ltp", ltp)
                 totalqty= int(amounttotrade/ltp)
+
+
+                print("totalqty1: ",totalqty)
+
                 totalqty= totalqty * Leverage_multiplier
+                print("totalqty2: ", totalqty)
 
 
 
@@ -165,31 +167,32 @@ def check_orders(symbol_dict):
                 tp3qty=int(tp2qty)
                 data["tp3qty"] = tp3qty
 
-                tp1 =calculate_percentage_values(data["previousclose"],Target1Percentage)
-                tp1 = data["previousclose"] + tp1
+                tp1 =calculate_percentage_values(data["buyval"],Target1Percentage)
+                tp1 = data["buyval"] + tp1
                 data['tp1']= tp1
 
-                tp2 =calculate_percentage_values(data["previousclose"],Target2Percentage)
-                tp2 = data["previousclose"] + tp2
+                tp2 =calculate_percentage_values(data["buyval"],Target2Percentage)
+                tp2 = data["buyval"] + tp2
                 data['tp2']= tp2
 
-                tp3 = calculate_percentage_values(data["previousclose"], Target3Percentage)
-                tp3 = data["previousclose"] + tp3
+                tp3 = calculate_percentage_values(data["buyval"], Target3Percentage)
+                tp3 = data["buyval"] + tp3
                 data['tp3'] = tp3
 
-                stoplossval=calculate_percentage_values(data["previousclose"], StoplossPercentage)
-                stoplossval = data["previousclose"] - stoplossval
+                stoplossval=calculate_percentage_values(data["buyval"], StoplossPercentage)
+                stoplossval = data["buyval"] - stoplossval
                 data['stoplossval'] = stoplossval
 
                 data["tslval"] = calculate_percentage_values(ltp, TSLPercentage)
                 data["tslstep"] = ltp + data["tslval"]
 
-
-                Zerodha_Integration.buy(symbol,totalqty)
-                orderlog = f"{timestamp} Buy order executed for {symbol} for lotsize= {totalqty}  @ {ltp} ,Target1 ={tp1},Target2 ={tp2},Target3 ={tp3} And Stoploss ={stoplossval}"
+                orderlog = f"{timestamp} Buy order executed for {symbol} for lotsize= {totalqty}  @ {ltp} ,Target1 ={tp1},Target2 ={tp2},Target3 ={tp3}, TslStep= {data['tslstep']}  And Stoploss ={stoplossval}"
+                print(orderlog)
                 write_to_order_logs(orderlog)
+                Zerodha_Integration.buy(symbol,int(totalqty))
 
-            if data['tradetype'] is None and data['sellval'] > 0 and ltp < data['sellval']:
+
+            if data['tradetype'] is None and float(data['sellval']) > 0 and float(ltp) < float(data['sellval']):
                 data['tradetype'] = "SHORT"
                 data["stoplos_bool"] = True
                 data["tp1_bool"] = True
@@ -200,9 +203,6 @@ def check_orders(symbol_dict):
                 amounttotrade = calculate_percentage_values(brokermargin, TotalAmountQty)
                 totalqty = int(amounttotrade / ltp)
                 totalqty = totalqty * Leverage_multiplier
-
-
-
                 data["slqty"] = totalqty
                 data["totalqty"] = totalqty
 
@@ -220,28 +220,29 @@ def check_orders(symbol_dict):
                 data["tp3qty"] = tp3qty
 
 
-                tp1 = calculate_percentage_values(data["previousclose"], Target1Percentage)
-                tp1 = data["previousclose"] - tp1
+                tp1 = calculate_percentage_values(data["sellval"], Target1Percentage)
+                tp1 = data["sellval"] - tp1
                 data['tp1'] = tp1
 
-                tp2 = calculate_percentage_values(data["previousclose"], Target2Percentage)
-                tp2 = data["previousclose"] - tp2
+                tp2 = calculate_percentage_values(data["sellval"], Target2Percentage)
+                tp2 = data["buyval"] - tp2
                 data['tp2'] = tp2
 
-                tp3 = calculate_percentage_values(data["previousclose"], Target3Percentage)
-                tp3 = data["previousclose"] - tp3
+                tp3 = calculate_percentage_values(data["sellval"], Target3Percentage)
+                tp3 = data["sellval"] - tp3
                 data['tp3'] = tp3
 
-                stoplossval = calculate_percentage_values(data["previousclose"], StoplossPercentage)
-                stoplossval = data["previousclose"] + stoplossval
+                stoplossval = calculate_percentage_values(data["sellval"], StoplossPercentage)
+                stoplossval = data["sellval"] + stoplossval
                 data['stoplossval'] = stoplossval
 
                 data["tslval"] = calculate_percentage_values(ltp, TSLPercentage)
                 data["tslstep"] = ltp - data["tslval"]
 
 
-                Zerodha_Integration.short(symbol, totalqty)
-                orderlog = f"{timestamp} sell order executed for {symbol} for lotsize= {totalqty} @ {ltp} ,Target1 ={tp1},Target2 ={tp2},Target3 ={tp3} And Stoploss ={stoplossval} "
+                Zerodha_Integration.short(symbol,int( totalqty))
+                orderlog = f"{timestamp} sell order executed for {symbol} for lotsize= {totalqty} @ {ltp} ,Target1 ={tp1},Target2 ={tp2},Target3 ={tp3}, TslStep= {data['tslstep']} And Stoploss ={stoplossval} "
+                print(orderlog)
                 write_to_order_logs(orderlog)
 
             net_positions=Zerodha_Integration.get_position()
