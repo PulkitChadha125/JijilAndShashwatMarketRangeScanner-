@@ -184,6 +184,7 @@ def check_orders(symbol_dict):
                 data['stoplossval'] = stoplossval
 
                 data["tslval"] = calculate_percentage_values(ltp, TSLPercentage)
+
                 data["tslstep"] = ltp + data["tslval"]
 
                 orderlog = f"{timestamp} Buy order executed for {symbol} for lotsize= {totalqty}  @ {ltp} ,Target1 ={tp1},Target2 ={tp2},Target3 ={tp3}, TslStep= {data['tslstep']}  And Stoploss ={stoplossval}"
@@ -257,15 +258,18 @@ def check_orders(symbol_dict):
 
 
                 if quantity>0 and data['tradetype']== "BUY" and float(ltp) >= float(data["tslstep"]):
-                    data["tslstep"]= ltp+data["tslstep"]
-                    data['stoplossval']=data['stoplossval']+data["tslstep"]
+
+                    data["tslstep"]= data["tslstep"]+data["tslval"]
+                    data['stoplossval']=data['stoplossval']+data["tslval"]
+
+
                     orderlog = f"{timestamp} Tsl executed {symbol} for lotsize=  @ {ltp} new  Stoploss ={data['stoplossval']}"
                     print(orderlog)
                     write_to_order_logs(orderlog)
 
                 if quantity>0 and data['tradetype']== "SHORT" and float(ltp) <= float(data["tslstep"]):
-                    data["tslstep"]= ltp-data["tslstep"]
-                    data['stoplossval']=data['stoplossval']-data["tslstep"]
+                    data["tslstep"]= ltp-data["tslval"]
+                    data['stoplossval']=data['stoplossval']-data["tslval"]
                     orderlog = f"{timestamp} Tsl executed {symbol} for lotsize=  @ {ltp} new  Stoploss ={data['stoplossval']}"
                     print(orderlog)
                     write_to_order_logs(orderlog)
@@ -278,7 +282,7 @@ def check_orders(symbol_dict):
                     data["slqty"] = int(data["slqty"])-int(data["tp1qty"])
 
                     Zerodha_Integration.sell(symbol, int(data["tp1qty"]))
-                    orderlog = f"{timestamp} Buy Target 1 executed @ {data['tp1']}"
+                    orderlog = f"{timestamp} Buy Target 1 executed {symbol} @ {data['tp1']}"
                     data['tp1']=0
                     write_to_order_logs(orderlog)
 
@@ -286,7 +290,7 @@ def check_orders(symbol_dict):
                     data["tp1_bool"]=False
                     data["slqty"] = int(data["slqty"]) - int(data["tp1qty"])
                     Zerodha_Integration.cover(symbol, int(data["tp1qty"]))
-                    orderlog = f"{timestamp} Sell Target 1 executed @ {data['tp1']}"
+                    orderlog = f"{timestamp} Sell Target 1 executed {symbol} @ {data['tp1']}"
                     data['tp1']=0
                     write_to_order_logs(orderlog)
 
@@ -294,7 +298,7 @@ def check_orders(symbol_dict):
                     data["tp2_bool"]=False
                     data["slqty"] = int(data["slqty"]) - int(data["tp2qty"])
                     Zerodha_Integration.sell(symbol, int(data["tp2qty"]))
-                    orderlog = f"{timestamp} Buy Target 2 executed @ {data['tp2']}"
+                    orderlog = f"{timestamp} Buy Target 2 executed {symbol} @ {data['tp2']}"
                     data['tp2']=0
                     write_to_order_logs(orderlog)
 
@@ -302,7 +306,7 @@ def check_orders(symbol_dict):
                     data["tp2_bool"]=False
                     data["slqty"] = int(data["slqty"]) - int(data["tp2qty"])
                     Zerodha_Integration.cover(symbol, int(data["tp2qty"]))
-                    orderlog = f"{timestamp} Sell Target 2 executed @ {data['tp2']}"
+                    orderlog = f"{timestamp} Sell Target 2 executed {symbol} @ {data['tp2']}"
                     data['tp2']=0
                     write_to_order_logs(orderlog)
 
@@ -310,7 +314,7 @@ def check_orders(symbol_dict):
                     data["tp3_bool"]=False
                     data["slqty"] = 0
                     Zerodha_Integration.sell(symbol, int(data["tp3qty"]))
-                    orderlog = f"{timestamp} Buy Target 3 executed @ {data['tp3']}"
+                    orderlog = f"{timestamp} Buy Target 3 executed {symbol} @ {data['tp3']}"
                     data['tp3']=0
                     write_to_order_logs(orderlog)
                     data['tradetype'] = "TradeDone"
@@ -319,7 +323,7 @@ def check_orders(symbol_dict):
                     data["tp3_bool"]=False
                     data["slqty"] = 0
                     Zerodha_Integration.cover(symbol, int(data["tp3qty"]))
-                    orderlog = f"{timestamp} Short Target 3 executed @ {data['tp3']}"
+                    orderlog = f"{timestamp} Short Target 3 executed {symbol} @ {data['tp3']}"
                     data['tp3']=0
                     write_to_order_logs(orderlog)
                     data['tradetype'] = "TradeDone"
@@ -327,7 +331,7 @@ def check_orders(symbol_dict):
                 if quantity > 0 and data['tradetype']== "BUY" and float(ltp) <= float(data['stoplossval']) and float( data['stoplossval'] ) > 0 and data["stoplos_bool"] == True:
                     data["stoplos_bool"]=False
                     Zerodha_Integration.sell(symbol, 1)
-                    orderlog = f"{timestamp} Buy Stoploss executed @ {data['tp3']}"
+                    orderlog = f"{timestamp} Buy Stoploss executed {symbol} @ {data['tp3']}"
                     data['tp3']=0
                     write_to_order_logs(orderlog)
                     data['tradetype'] = "TradeDone"
@@ -335,7 +339,7 @@ def check_orders(symbol_dict):
                 if quantity < 0 and data['tradetype']== "SHORT" and float(ltp) >= float(data['stoplossval']) and float(data['stoplossval']) > 0 and data["stoplos_bool"] == True:
                     data["stoplos_bool"]=False
                     Zerodha_Integration.cover(symbol, int(data["slqty"]))
-                    orderlog = f"{timestamp} Short Stoploss executed @ {data['tp3']}"
+                    orderlog = f"{timestamp} Short Stoploss executed {symbol} @ {data['tp3']}"
                     data['tp3']=0
                     write_to_order_logs(orderlog)
                     data['tradetype'] = "TradeDone"
