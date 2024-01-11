@@ -62,6 +62,10 @@ Lot1_percentage=float( credentials_dict.get('Lot1_percentage'))
 Lot2_percentage=float( credentials_dict.get('Lot2_percentage'))
 Lot3_percentage=float( credentials_dict.get('Lot3_percentage'))
 Leverage_multiplier=float( credentials_dict.get('Leverage_multiplier'))
+StartTime=credentials_dict.get('StartTime')
+Stoptime=credentials_dict.get('Stoptime')
+
+
 
 twofa = pyotp.TOTP(fakey)
 twofa = twofa.now()
@@ -72,6 +76,7 @@ formatted_symbols=None
 def my_trade_universe():
     global BuyBufferPercentage ,SellBufferPercentage , Leverage_multiplier, Lot3_percentage,Lot2_percentage, Lot1_percentage,TotalAmountQty, symbol_dict, formatted_symbols,StoplossPercentage,Target1Percentage,Target2Percentage,Target3Percentage,TSLPercentage
     try:
+
         df = pd.read_csv('MYINSTRUMENTS.csv')
         current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         print("start time:", current_time)
@@ -124,11 +129,17 @@ def check_orders(symbol_dict):
 
     for symbol, data in symbol_dict.items():
         try:
+            StartTime = credentials_dict.get('StartTime')
+            Stoptime = credentials_dict.get('Stoptime')
+            StartTime = datetime.strptime(StartTime, '%H:%M').time()
+            Stoptime = datetime.strptime(Stoptime, '%H:%M').time()
+
+            now = datetime.now().time()
             timestamp = datetime.now()
             timestamp = timestamp.strftime("%d/%m/%Y %H:%M:%S")
             ltp = float(Zerodha_Integration.get_ltp(symbol))
 
-            if data['tradetype'] is None and float(data['buyval'] ) > 0 and float(ltp) > float(data['buyval']):
+            if data['tradetype'] is None and float(data['buyval'] ) > 0 and float(ltp) > float(data['buyval']) and now>=StartTime and now < Stoptime:
                 ltp = float(Zerodha_Integration.get_ltp(symbol))
                 data['tradetype']="BUY"
                 data["stoplos_bool"]=True
@@ -193,7 +204,7 @@ def check_orders(symbol_dict):
                 Zerodha_Integration.buy(symbol,int(totalqty))
 
 
-            if data['tradetype'] is None and float(data['sellval']) > 0 and float(ltp) < float(data['sellval']):
+            if data['tradetype'] is None and float(data['sellval']) > 0 and float(ltp) < float(data['sellval']) and now>=StartTime and now < Stoptime:
                 data['tradetype'] = "SHORT"
                 data["stoplos_bool"] = True
                 data["tp1_bool"] = True
@@ -372,7 +383,7 @@ def mainstrategy():
     stop_time = datetime.strptime(stoptime, '%H:%M').time()
     while True:
         now = datetime.now().time()
-        if now >= start_time and now < stop_time:
+        if now >= start_time :
             check_orders(symbol_dict)
             sleep_time.sleep(1)
 
