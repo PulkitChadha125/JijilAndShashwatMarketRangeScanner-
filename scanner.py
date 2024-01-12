@@ -111,6 +111,7 @@ def my_trade_universe():
                     "tslstep":0,
                     "tslmove":0,
                     "tslval":0,
+                    "slpts":0,
                 }
                 formatted_symbols = [f'NSE: {symbol}' for symbol in symbol_dict.keys()]
             except Exception as e:
@@ -191,6 +192,7 @@ def check_orders(symbol_dict):
                 data['tp3'] = tp3
 
                 stoplossval=calculate_percentage_values(data["buyval"], StoplossPercentage)
+                data["slpts"] =  stoplossval
                 stoplossval = data["buyval"] - stoplossval
                 data['stoplossval'] = stoplossval
 
@@ -245,6 +247,7 @@ def check_orders(symbol_dict):
                 data['tp3'] = tp3
 
                 stoplossval = calculate_percentage_values(data["sellval"], StoplossPercentage)
+                data["slpts"] = stoplossval
                 stoplossval = data["sellval"] + stoplossval
                 data['stoplossval'] = stoplossval
 
@@ -270,23 +273,18 @@ def check_orders(symbol_dict):
 
                 if quantity>0 and data['tradetype']== "BUY" and float(ltp) >= float(data["tslstep"]):
 
-                    data["tslstep"]= data["tslstep"]+data["tslval"]
-                    data['stoplossval']=data['stoplossval']+data["tslval"]
-
-
+                    data["tslstep"]= ltp+data["tslval"]
+                    data['stoplossval']=ltp - data["slpts"]
                     orderlog = f"{timestamp} Tsl executed {symbol} for lotsize=  @ {ltp} new  Stoploss ={data['stoplossval']}"
                     print(orderlog)
                     write_to_order_logs(orderlog)
 
                 if quantity>0 and data['tradetype']== "SHORT" and float(ltp) <= float(data["tslstep"]):
                     data["tslstep"]= ltp-data["tslval"]
-                    data['stoplossval']=data['stoplossval']-data["tslval"]
+                    data['stoplossval']=ltp+ data["slpts"]
                     orderlog = f"{timestamp} Tsl executed {symbol} for lotsize=  @ {ltp} new  Stoploss ={data['stoplossval']}"
                     print(orderlog)
                     write_to_order_logs(orderlog)
-
-
-
 
                 if quantity > 0 and data['tradetype']== "BUY" and float(ltp) >= float(data['tp1']) and float(data['tp1']) > 0 and data["tp1_bool"] == True:
                     data["tp1_bool"]=False
