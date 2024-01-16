@@ -79,7 +79,7 @@ def my_trade_universe():
 
         df = pd.read_csv('MYINSTRUMENTS.csv')
         current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        print("start time:", current_time)
+
         for symbol in df['Symbol']:
             try:
                 previousclose= Zerodha_Integration.get_prevous_close(symbol)
@@ -119,7 +119,7 @@ def my_trade_universe():
 
         # print(symbol_dict)
         current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        print("stop time:", current_time)
+
         print(symbol_dict)
     except Exception as e:
         print("An error occurred while reading the MYINSTRUMENTS.CSV file:", str(e))
@@ -139,6 +139,10 @@ def check_orders(symbol_dict):
             timestamp = datetime.now()
             timestamp = timestamp.strftime("%d/%m/%Y %H:%M:%S")
             ltp = float(Zerodha_Integration.get_ltp(symbol))
+
+            print(f"symbol: {symbol},ltp:{ltp}")
+            print(f"symbol: {symbol},data['buyval']:{data['buyval']}")
+
 
             if data['tradetype'] is None and float(data['buyval'] ) > 0 and float(ltp) > float(data['buyval']) and now>=StartTime and now < Stoptime:
                 ltp = float(Zerodha_Integration.get_ltp(symbol))
@@ -179,21 +183,21 @@ def check_orders(symbol_dict):
                 tp3qty=int(tp2qty)
                 data["tp3qty"] = tp3qty
 
-                tp1 =calculate_percentage_values(data["buyval"],Target1Percentage)
-                tp1 = data["buyval"] + tp1
+                tp1 =calculate_percentage_values(ltp,Target1Percentage)
+                tp1 = ltp + tp1
                 data['tp1']= tp1
 
-                tp2 =calculate_percentage_values(data["buyval"],Target2Percentage)
-                tp2 = data["buyval"] + tp2
+                tp2 =calculate_percentage_values(ltp,Target2Percentage)
+                tp2 = ltp + tp2
                 data['tp2']= tp2
 
-                tp3 = calculate_percentage_values(data["buyval"], Target3Percentage)
-                tp3 = data["buyval"] + tp3
+                tp3 = calculate_percentage_values(ltp, Target3Percentage)
+                tp3 =ltp + tp3
                 data['tp3'] = tp3
 
-                stoplossval=calculate_percentage_values(data["buyval"], StoplossPercentage)
+                stoplossval=calculate_percentage_values(ltp, StoplossPercentage)
                 data["slpts"] =  stoplossval
-                stoplossval = data["buyval"] - stoplossval
+                stoplossval = ltp - stoplossval
                 data['stoplossval'] = stoplossval
 
                 data["tslval"] = calculate_percentage_values(ltp, TSLPercentage)
@@ -234,21 +238,21 @@ def check_orders(symbol_dict):
                 data["tp3qty"] = tp3qty
 
 
-                tp1 = calculate_percentage_values(data["sellval"], Target1Percentage)
-                tp1 = data["sellval"] - tp1
+                tp1 = calculate_percentage_values(ltp, Target1Percentage)
+                tp1 = ltp - tp1
                 data['tp1'] = tp1
 
-                tp2 = calculate_percentage_values(data["sellval"], Target2Percentage)
-                tp2 = data["buyval"] - tp2
+                tp2 = calculate_percentage_values(ltp, Target2Percentage)
+                tp2 = ltp - tp2
                 data['tp2'] = tp2
 
-                tp3 = calculate_percentage_values(data["sellval"], Target3Percentage)
-                tp3 = data["sellval"] - tp3
+                tp3 = calculate_percentage_values(ltp, Target3Percentage)
+                tp3 = ltp - tp3
                 data['tp3'] = tp3
 
-                stoplossval = calculate_percentage_values(data["sellval"], StoplossPercentage)
+                stoplossval = calculate_percentage_values(ltp, StoplossPercentage)
                 data["slpts"] = stoplossval
-                stoplossval = data["sellval"] + stoplossval
+                stoplossval = ltp + stoplossval
                 data['stoplossval'] = stoplossval
 
                 data["tslval"] = calculate_percentage_values(ltp, TSLPercentage)
