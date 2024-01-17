@@ -343,8 +343,8 @@ def check_orders(symbol_dict):
 
                 if quantity > 0 and data['tradetype']== "BUY" and float(ltp) <= float(data['stoplossval']) and float( data['stoplossval'] ) > 0 and data["stoplos_bool"] == True:
                     data["stoplos_bool"]=False
-                    Zerodha_Integration.sell(symbol, 1)
-                    orderlog = f"{timestamp} Buy Stoploss executed {symbol} @ {data['tp3']}"
+                    Zerodha_Integration.sell(symbol, int(data["slqty"]))
+                    orderlog = f"{timestamp} Buy Stoploss executed {symbol} @ {ltp} , qty traded: {data['slqty']}"
                     data['tp3']=0
                     write_to_order_logs(orderlog)
                     data['tradetype'] = "TradeDone"
@@ -352,10 +352,11 @@ def check_orders(symbol_dict):
                 if quantity < 0 and data['tradetype']== "SHORT" and float(ltp) >= float(data['stoplossval']) and float(data['stoplossval']) > 0 and data["stoplos_bool"] == True:
                     data["stoplos_bool"]=False
                     Zerodha_Integration.cover(symbol, int(data["slqty"]))
-                    orderlog = f"{timestamp} Short Stoploss executed {symbol} @ {data['tp3']}"
+                    orderlog = f"{timestamp} Short Stoploss executed {symbol} @ {ltp}, qty traded: {data['slqty']}"
                     data['tp3']=0
                     write_to_order_logs(orderlog)
                     data['tradetype'] = "TradeDone"
+
 
 
 
